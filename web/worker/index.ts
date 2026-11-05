@@ -55,17 +55,22 @@ function invalidFields(input: ContactInput): string[] {
   return fields;
 }
 
-async function isHuman(token: string, secret: string, ip: string | null): Promise<boolean> {
-  if (!token) return false;
+// Devuelve también los error-codes de Turnstile para dejarlos en el log (nunca el token ni el secreto)
+async function verifyTurnstile(
+  token: string,
+  secret: string,
+  ip: string | null,
+): Promise<{ success: boolean; codes: string[] }> {
+  if (!token) return { success: false, codes: ['missing-input-response'] };
   const body = new FormData();
   body.append('secret', secret);
   body.append('response', token);
   if (ip) body.append('remoteip', ip);
 
   const response = await fetch(SITEVERIFY_URL, { method: 'POST', body });
-  if (!response.ok) return false;
-  const result = (await response.json()) as { success?: boolean };
-  return result.success === true;
+  if (!response.ok) return { success: false, codes: [`http-${response.status}`] };
+  const result = (await response.json()) as { success?: boolean; 'error-codes'?: string[] };
+  return { success: result.success === true, codes: result['error-codes'] ?? [] };
 }
 
 async function handleContact(request: Request, env: Env): Promise<Response> {
@@ -89,12 +94,28 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
   const fields = invalidFields(input);
   if (fields.length > 0) return json(400, { ok: false, error: 'validation', fields });
 
-  const human = await isHuman(input.turnstileToken, env.TURNSTILE_SECRET, request.headers.get('CF-Connecting-IP'));
-  if (!human) return json(403, { ok: false, error: 'captcha' });
+  // Secretos de ejecución (Settings → Variables and Secrets, no los de Build)
+  if (!env.TURNSTILE_SECRET || !env.CONTACT_TO) {
+    console.error('Faltan secretos del Worker', {
+      TURNSTILE_SECRET: Boolean(env.TURNSTILE_SECRET),
+      CONTACT_TO: Boolean(env.CONTACT_TO),
+    });
+    return json(500, { ok: false, error: 'config' });
+  }
+
+  const captcha = await verifyTurnstile(
+    input.turnstileToken,
+    env.TURNSTILE_SECRET.trim(),
+    request.headers.get('CF-Connecting-IP'),
+  );
+  if (!captcha.success) {
+    console.warn('Turnstile rechazó el envío', { codes: captcha.codes });
+    return json(403, { ok: false, error: 'captcha' });
+  }
 
   try {
     await env.EMAIL.send({
-      to: env.CONTACT_TO,
+      to: env.CONTACT_TO.trim(),
       from: SENDER,
       subject: `Portfolio · Mensaje de ${input.name}`,
       text: [
