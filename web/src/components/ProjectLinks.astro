@@ -1,0 +1,68 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { assertNoPlaceholders } from '../lib/placeholders';
+
+type Link = CollectionEntry<'projects'>['data']['links'][number];
+
+interface Props {
+  links: Link[];
+  // Identifica al proyecto en el mensaje de error si quedan marcadores pendientes
+  source: string;
+}
+
+const { links, source } = Astro.props;
+
+const defaultLabels: Record<Link['type'], string> = {
+  repo: 'Código',
+  demo: 'Demo',
+  other: 'Enlace',
+};
+
+assertNoPlaceholders(source, links.map((link) => link.url));
+---
+
+{
+  links.length > 0 && (
+    <ul class="links">
+      {links.map((link) => (
+        <li>
+          <a href={link.url} target="_blank" rel="noopener noreferrer">
+            {link.label ?? defaultLabels[link.type]}
+            <span aria-hidden="true">↗</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+<style>
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 999px;
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    transition:
+      border-color 0.2s,
+      background-color 0.2s;
+  }
+
+  a:hover {
+    border-color: var(--color-accent);
+    background: rgb(124 140 255 / 0.08);
+  }
+</style>

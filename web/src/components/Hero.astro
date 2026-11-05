@@ -1,0 +1,126 @@
+---
+import { site } from '../data/site';
+---
+
+<section class="hero container">
+  <p class="pill"><span class="dot" aria-hidden="true"></span>{site.title}</p>
+  <h1>{site.name}</h1>
+  <p class="tagline">{site.tagline}</p>
+  <p class="bio">{site.bio}</p>
+  <div class="actions">
+    <a href="#contacto" class="button primary">Contáctame</a>
+    <a href="#proyectos" class="button secondary">Ver proyectos</a>
+    <a href={site.githubUrl} class="button ghost" target="_blank" rel="noopener noreferrer">
+      GitHub <span aria-hidden="true">↗</span>
+    </a>
+  </div>
+</section>
+
+<style>
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-6);
+    padding-top: var(--space-24);
+    padding-bottom: var(--space-16);
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.03);
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+  }
+
+  .dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--color-accent-2);
+    box-shadow: 0 0 10px var(--color-accent-2);
+  }
+
+  h1 {
+    font-size: var(--font-size-display);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    background: var(--gradient-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .tagline {
+    font-size: var(--font-size-xl);
+    font-weight: 500;
+    color: var(--color-text);
+  }
+
+  .bio {
+    max-width: 40rem;
+    font-size: var(--font-size-lg);
+    color: var(--color-muted);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+  }
+
+  .button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-6);
+    border-radius: 999px;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    transition:
+      transform 0.2s var(--ease-out),
+      background-color 0.2s,
+      border-color 0.2s,
+      box-shadow 0.2s;
+  }
+
+  .button:hover {
+    transform: translateY(-1px);
+  }
+
+  .primary {
+    background: var(--color-text);
+    color: var(--color-bg);
+    box-shadow: 0 0 0 1px var(--color-text), 0 8px 30px -8px var(--color-accent-glow);
+  }
+
+  .primary:hover {
+    box-shadow: 0 0 0 1px var(--color-text), 0 12px 40px -6px var(--color-accent-glow);
+  }
+
+  .secondary {
+    border: 1px solid var(--color-border-strong);
+    background: rgb(255 255 255 / 0.04);
+  }
+
+  .secondary:hover,
+  .ghost:hover {
+    border-color: var(--color-accent);
+  }
+
+  .ghost {
+    border: 1px solid transparent;
+    color: var(--color-muted);
+  }
+
+  .ghost:hover {
+    color: var(--color-text);
+  }
+</style>

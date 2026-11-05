@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "portfolio",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-11-05",
+  // Las páginas se sirven directo desde dist/; solo /api/* ejecuta el Worker
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
+  },
+  // Sin destino fijo en el repo: el correo del dueño es el secreto CONTACT_TO
+  "send_email": [{ "name": "EMAIL" }],
+  "routes": [{ "pattern": "bmieres.cl", "custom_domain": true }],
+  "observability": { "enabled": true }
+}

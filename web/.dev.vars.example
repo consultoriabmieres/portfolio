@@ -1,0 +1,5 @@
+# Copiar como .dev.vars para probar el Worker en local (npm run worker:dev).
+# Las claves de Turnstile de abajo son las de PRUEBA públicas de Cloudflare: siempre aprueban.
+# En producción estos valores se cargan como secretos en el panel de Cloudflare, nunca aquí.
+CONTACT_TO=tu-correo-verificado@example.com
+TURNSTILE_SECRET=1x0000000000000000000000000000000AA

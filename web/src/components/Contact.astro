@@ -1,0 +1,277 @@
+---
+import { site, turnstileSiteKey } from '../data/site';
+---
+
+<section id="contacto" class="container contact-wrap reveal" aria-labelledby="contact-title">
+  <div class="contact">
+    <div class="intro">
+      <p class="eyebrow">Contacto</p>
+      <h2 id="contact-title">¿Conversamos?</h2>
+      <p class="lead">
+        Si te interesa mi trabajo o tienes un proyecto en mente, escríbeme y te respondo a tu correo.
+      </p>
+      <a class="linkedin" href={site.linkedinUrl} target="_blank" rel="noopener noreferrer">
+        También estoy en LinkedIn <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+
+    <form class="form" data-contact-form novalidate>
+      <div class="field">
+        <label for="contact-name">Nombre</label>
+        <input id="contact-name" name="name" type="text" autocomplete="name" required maxlength="100" />
+      </div>
+      <div class="field">
+        <label for="contact-email">Email</label>
+        <input id="contact-email" name="email" type="email" autocomplete="email" required maxlength="254" />
+      </div>
+      <div class="field">
+        <label for="contact-message">Mensaje</label>
+        <textarea id="contact-message" name="message" rows="5" required minlength="10" maxlength="5000"></textarea>
+      </div>
+
+      <!-- Campo trampa: oculto para personas, los bots lo completan -->
+      <div class="trap" aria-hidden="true">
+        <label for="contact-website">No completar</label>
+        <input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+      </div>
+
+      <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="dark" data-language="es"></div>
+
+      <div class="actions">
+        <button type="submit" class="submit" data-submit>Enviar mensaje</button>
+        <p class="status" data-status role="status" aria-live="polite"></p>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<script>
+  // Envío del formulario a /api/contact (contrato en specs/.../contracts/api-contact.md)
+  declare global {
+    interface Window {
+      turnstile?: { reset(): void };
+    }
+  }
+
+  const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+  const submit = form?.querySelector<HTMLButtonElement>('[data-submit]');
+  const status = form?.querySelector<HTMLElement>('[data-status]');
+
+  const fieldLabels: Record<string, string> = {
+    name: 'el nombre (hasta 100 caracteres)',
+    email: 'un email válido',
+    message: 'el mensaje (entre 10 y 5000 caracteres)',
+  };
+
+  function showStatus(text: string, kind: 'ok' | 'error' | 'info') {
+    if (!status) return;
+    status.textContent = text;
+    status.dataset.kind = kind;
+  }
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!submit) return;
+
+    // Validación en el navegador; el Worker vuelve a validar
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    const data = new FormData(form);
+    const turnstileToken = String(data.get('cf-turnstile-response') ?? '');
+    if (!turnstileToken) {
+      showStatus('Espera a que termine la verificación anti-bots y vuelve a enviar.', 'error');
+      return;
+    }
+
+    submit.disabled = true;
+    showStatus('Enviando…', 'info');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.get('name'),
+          email: data.get('email'),
+          message: data.get('message'),
+          website: data.get('website'),
+          turnstileToken,
+        }),
+      });
+      const result = (await response.json().catch(() => ({}))) as { ok?: boolean; error?: string; fields?: string[] };
+
+      if (response.ok && result.ok) {
+        form.reset();
+        showStatus('Mensaje enviado. Te respondo pronto a tu correo.', 'ok');
+      } else if (result.error === 'validation' && result.fields?.length) {
+        showStatus(`Revisa ${result.fields.map((f) => fieldLabels[f] ?? f).join(', ')}.`, 'error');
+      } else if (result.error === 'captcha') {
+        showStatus('No se pudo verificar que no eres un bot. Inténtalo de nuevo.', 'error');
+      } else {
+        showStatus('No se pudo enviar el mensaje. Inténtalo de nuevo en unos minutos.', 'error');
+      }
+    } catch {
+      showStatus('No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.', 'error');
+    } finally {
+      submit.disabled = false;
+      // El token de Turnstile es de un solo uso: se pide uno nuevo tras cada intento
+      window.turnstile?.reset();
+    }
+  });
+</script>
+
+<style>
+  .contact-wrap {
+    margin-top: var(--space-24);
+  }
+
+  .contact {
+    display: grid;
+    gap: var(--space-12);
+    padding: var(--space-12) var(--space-6);
+    border: 1px solid rgb(124 140 255 / 0.3);
+    border-radius: calc(var(--radius) * 1.5);
+    background:
+      radial-gradient(40rem 20rem at 0% 0%, rgb(124 140 255 / 0.2), transparent 70%),
+      radial-gradient(30rem 18rem at 100% 100%, rgb(61 214 198 / 0.14), transparent 70%),
+      var(--color-surface);
+    box-shadow: 0 30px 80px -40px var(--color-accent-glow);
+  }
+
+  .intro {
+    display: grid;
+    align-content: start;
+    gap: var(--space-4);
+  }
+
+  h2 {
+    font-size: clamp(2rem, 1.3rem + 3vw, 3.25rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .lead {
+    max-width: 32rem;
+    font-size: var(--font-size-lg);
+    color: var(--color-muted);
+  }
+
+  .linkedin {
+    justify-self: start;
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  .linkedin:hover {
+    text-decoration: underline;
+  }
+
+  .form {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  label {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-muted);
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: rgb(0 0 0 / 0.25);
+    color: var(--color-text);
+    font: inherit;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 8rem;
+  }
+
+  input:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgb(124 140 255 / 0.25);
+  }
+
+  .trap {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .submit {
+    padding: var(--space-3) var(--space-8);
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-text);
+    color: var(--color-bg);
+    font: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 8px 30px -8px var(--color-accent-glow);
+    transition:
+      transform 0.2s var(--ease-out),
+      opacity 0.2s;
+  }
+
+  .submit:hover {
+    transform: translateY(-1px);
+  }
+
+  .submit:disabled {
+    opacity: 0.6;
+    cursor: progress;
+    transform: none;
+  }
+
+  .status {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+  }
+
+  .status[data-kind='ok'] {
+    color: var(--color-accent-2);
+  }
+
+  .status[data-kind='error'] {
+    color: #ff8a8a;
+  }
+
+  @media (min-width: 56rem) {
+    .contact {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+      padding: var(--space-16);
+    }
+  }
+</style>

@@ -1,0 +1,124 @@
+---
+import { site } from '../data/site';
+
+// Iniciales del nombre para el logo (ej. "Benjamín Mieres Méndez" → "BM")
+const initials = site.name
+  .split(' ')
+  .slice(0, 2)
+  .map((word) => word[0])
+  .join('');
+---
+
+<header class="nav">
+  <div class="container nav-inner">
+    <a href="/" class="logo" aria-label={`${site.name}, inicio`}>
+      <span class="logo-mark">{initials}</span>
+      <span class="logo-name">{site.name}</span>
+    </a>
+    <nav aria-label="Principal">
+      <ul>
+        <li><a href="/#proyectos">Proyectos</a></li>
+        <li><a href={site.githubUrl} target="_blank" rel="noopener noreferrer">GitHub</a></li>
+        <li><a href={site.linkedinUrl} target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+        <li><a href="/#contacto" class="cta">Contacto</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    height: var(--nav-height);
+    border-bottom: 1px solid var(--color-border);
+    background: rgb(8 9 12 / 0.7);
+    backdrop-filter: saturate(160%) blur(14px);
+    -webkit-backdrop-filter: saturate(160%) blur(14px);
+  }
+
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    gap: var(--space-4);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-weight: 600;
+  }
+
+  .logo-mark {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-2));
+    color: #0b0d12;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+  }
+
+  .logo-name {
+    display: none;
+    font-size: var(--font-size-sm);
+  }
+
+  ul {
+    display: flex;
+    gap: var(--space-1);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  nav a {
+    display: block;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--color-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    transition: color 0.2s, background-color 0.2s;
+  }
+
+  nav a:hover {
+    color: var(--color-text);
+    background: rgb(255 255 255 / 0.05);
+  }
+
+  /* Contacto es la acción principal del sitio (FR-027) */
+  nav a.cta {
+    margin-left: var(--space-2);
+    padding-inline: var(--space-4);
+    border-radius: 999px;
+    background: var(--color-text);
+    color: var(--color-bg);
+    font-weight: 600;
+  }
+
+  nav a.cta:hover {
+    background: var(--color-text);
+    box-shadow: 0 6px 24px -6px var(--color-accent-glow);
+  }
+
+  /* En pantallas angostas solo queda Proyectos y Contacto */
+  @media (max-width: 30rem) {
+    li:nth-child(2),
+    li:nth-child(3) {
+      display: none;
+    }
+  }
+
+  @media (min-width: 40rem) {
+    .logo-name {
+      display: inline;
+    }
+  }
+</style>

@@ -1,0 +1,153 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectLinks from '../../components/ProjectLinks.astro';
+import ProjectGallery from '../../components/ProjectGallery.astro';
+import ProjectVideos from '../../components/ProjectVideos.astro';
+import { site } from '../../data/site';
+
+// Una página por proyecto publicado; los borradores no generan dirección (FR-009)
+export async function getStaticPaths() {
+  const projects = await getCollection('projects', ({ data }) => !data.draft);
+  return projects.map((project) => ({ params: { id: project.id }, props: { project } }));
+}
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+}
+
+const { project } = Astro.props;
+const { data } = project;
+const { Content } = await render(project);
+const source = `src/content/projects/${project.id}`;
+const badge = data.kind === 'professional' ? `${data.company} · ${data.period}` : 'Proyecto personal';
+---
+
+<BaseLayout title={`${data.title} · ${site.name}`} description={data.summary}>
+  <article class="container project">
+    <a href="/#proyectos" class="back"><span aria-hidden="true">←</span> Volver a proyectos</a>
+
+    <header class="header">
+      <p class="eyebrow">{badge}</p>
+      <h1>{data.title}</h1>
+      <p class="summary">{data.summary}</p>
+      <ul class="stack" aria-label="Tecnologías">
+        {data.stack.map((tech) => <li>{tech}</li>)}
+      </ul>
+      <ProjectLinks links={data.links} source={source} />
+    </header>
+
+    <div class="cover">
+      <Image
+        src={data.cover.src}
+        alt={data.cover.alt}
+        widths={[640, 1280, 1920]}
+        sizes="(min-width: 72rem) 72rem, 100vw"
+        loading="eager"
+      />
+    </div>
+
+    <div class="body">
+      <Content />
+    </div>
+
+    <ProjectGallery images={data.images} />
+    <ProjectVideos videos={data.videos} source={source} />
+
+    <a href="/#proyectos" class="back"><span aria-hidden="true">←</span> Volver a proyectos</a>
+  </article>
+</BaseLayout>
+
+<style>
+  .project {
+    display: grid;
+    gap: var(--space-12);
+    padding-top: var(--space-12);
+  }
+
+  .back {
+    justify-self: start;
+    color: var(--color-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .back:hover {
+    color: var(--color-text);
+  }
+
+  .header {
+    display: grid;
+    gap: var(--space-4);
+    max-width: 48rem;
+  }
+
+  h1 {
+    font-size: clamp(2.25rem, 1.4rem + 3.5vw, 3.75rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+  }
+
+  .summary {
+    font-size: var(--font-size-lg);
+    color: var(--color-muted);
+  }
+
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .stack li {
+    padding: 0.125rem var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: rgb(255 255 255 / 0.03);
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+  }
+
+  .cover {
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: calc(var(--radius) * 1.25);
+    box-shadow: 0 30px 80px -40px var(--color-accent-glow);
+  }
+
+  .cover img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  /* Texto del Markdown */
+  .body {
+    max-width: 42rem;
+    font-size: var(--font-size-lg);
+    color: var(--color-text);
+  }
+
+  .body :global(p + p) {
+    margin-top: var(--space-4);
+  }
+
+  .body :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    background: rgb(255 255 255 / 0.06);
+  }
+
+  .body :global(a) {
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
+</style>
